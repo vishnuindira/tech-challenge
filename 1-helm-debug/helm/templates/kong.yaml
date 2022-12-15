@@ -1,0 +1,47 @@
+
+# Kong Ingress CRD
+apiVersion: configuration.konghq.com/v1
+kind: KongIngress # Kong CRD
+metadata:
+  name: {{ .Release.Name }}-service-ingress-conf
+proxy:
+  path: /
+route:
+  preserve_host: true  #false by default
+  strip_path: true     #true by default
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress # K8s Ingress
+metadata:
+  name: {{ .Release.Name }}-service-ingress
+  labels:
+    app: "{{ .Chart.Name }}"
+    AllowInsecureIngress: "true"
+  annotations:
+    configuration.konghq.com: {{ .Release.Name }}-service-ingress-conf # refer to Created Kong Ingress by name
+    plugins.konghq.com: {{ .Release.Name }}-kong-plugin-forwarded-port
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /de # uri which maps to unstream url
+            backend:
+              serviceName: hello-world-de
+              servicePort: 80
+          - path: / # uri which maps to unstream url
+            backend:
+              serviceName: hello-world-de
+              servicePort: 80
+---
+
+{{/*apiVersion: configuration.konghq.com/v1*/}}
+{{/*kind: KongPlugin*/}}
+{{/*metadata:*/}}
+{{/*  name: {{ .Release.Name }}-kong-plugin-forwarded-port*/}}
+{{/*  namespace: {{ .Values.namespace }}*/}}
+{{/*config:*/}}
+{{/*  functions:*/}}
+{{/*    - ngx.var.upstream_x_forwarded_port=443*/}}
+{{/*plugin: pre-function*/}}
